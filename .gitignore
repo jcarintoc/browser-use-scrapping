@@ -9,3 +9,10 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# Browser profile data (contains cookies/session)
+browser_data/
+linkedin_auth_state.json
+
+# Output data
+output/
