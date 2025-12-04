@@ -20,10 +20,28 @@ load_dotenv()
 
 
 # Define structured output schema
+class WorkExperience(BaseModel):
+    title: str
+    company: str
+    duration: str
+    location: str | None = None
+    description: str | None = None
+
+
+class Certificate(BaseModel):
+    name: str
+    issuer: str
+    issue_date: str | None = None
+    credential_id: str | None = None
+    credential_url: str | None = None
+
+
 class LinkedInProfile(BaseModel):
     full_profile_name: str
     professional_headline: str
     number_of_connections: int
+    experience: list[WorkExperience] = []
+    certificates: list[Certificate] = []
 
 
 async def main():
@@ -101,10 +119,18 @@ async def main():
         4. Click the "Me" button to open the profile dropdown menu
         5. In the dropdown, click "View Profile" link to go to your profile page
         6. Wait 3 seconds for profile page to load
-        7. Use extract action to get: profile name, headline, and number of connections
-        8. Use done action with all extracted information
+        7. Use extract action to get: profile name, headline, and number of connections from the top section
+        8. Scroll down slowly to load the Experience section
+        9. Use extract action to get all work experiences from the Experience section with: job title, company name, duration, location, and description
+        10. Continue scrolling down to find the Licenses & Certifications section
+        11. Use extract action to get all certificates from the Licenses & Certifications section with: certificate name, issuer/organization, issue date, credential ID, and credential URL (if available)
+        12. Use done action with all extracted information: profile data, all experiences, and all certificates
 
-        IMPORTANT: Do NOT try to navigate directly to profile URLs. Use the UI navigation (Me button -> View Profile).
+        IMPORTANT:
+        - Do NOT try to navigate directly to profile URLs. Use the UI navigation (Me button -> View Profile).
+        - Scroll slowly to ensure all sections load properly
+        - Extract ALL experiences and certificates, not just the first few
+        - If a section is not visible, it means the profile doesn't have that information, so just return empty lists
         """
     else:
         # Need to login first
@@ -122,14 +148,21 @@ async def main():
         10. Click the "Me" button to open the profile dropdown menu (NOT the messaging button!)
         11. In the dropdown menu, click the "View Profile" link
         12. Wait 3 seconds for profile page to load
-        13. Use extract action to get: profile name, headline, and number of connections
-        14. Use done action with all extracted information
+        13. Use extract action to get: profile name, headline, and number of connections from the top section
+        14. Scroll down slowly to load the Experience section
+        15. Use extract action to get all work experiences from the Experience section with: job title, company name, duration, location, and description
+        16. Continue scrolling down to find the Licenses & Certifications section
+        17. Use extract action to get all certificates from the Licenses & Certifications section with: certificate name, issuer/organization, issue date, credential ID, and credential URL (if available)
+        18. Use done action with all extracted information: profile data, all experiences, and all certificates
 
         IMPORTANT:
         - Use credentials from sensitive_data dictionary, never type them manually
         - Do NOT try to navigate directly to profile URLs like /in/username
         - Use the UI navigation: Me button -> View Profile dropdown link
         - The "Me" button is in the TOP NAVIGATION BAR, not the messaging area
+        - Scroll slowly to ensure all sections load properly
+        - Extract ALL experiences and certificates, not just the first few
+        - If a section is not visible, it means the profile doesn't have that information - that's okay, just return empty lists
         """
 
     try:
@@ -261,6 +294,18 @@ async def main():
                 print(f"   Name:        {parsed_profile.full_profile_name}")
                 print(f"   Headline:    {parsed_profile.professional_headline}")
                 print(f"   Connections: {parsed_profile.number_of_connections}")
+                print(f"\n   Experience ({len(parsed_profile.experience)} positions):")
+                for i, exp in enumerate(parsed_profile.experience, 1):
+                    print(f"      {i}. {exp.title} at {exp.company}")
+                    print(f"         Duration: {exp.duration}")
+                    if exp.location:
+                        print(f"         Location: {exp.location}")
+                print(f"\n   Certificates ({len(parsed_profile.certificates)} certificates):")
+                for i, cert in enumerate(parsed_profile.certificates, 1):
+                    print(f"      {i}. {cert.name}")
+                    print(f"         Issuer: {cert.issuer}")
+                    if cert.issue_date:
+                        print(f"         Issued: {cert.issue_date}")
             else:
                 print("⚠️  No final result available")
 
