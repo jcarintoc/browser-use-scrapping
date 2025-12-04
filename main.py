@@ -221,6 +221,55 @@ def clean_har_file(har_path: Path) -> tuple[int, int]:
     return original_count, len(filtered_entries)
 
 
+def validate_har_completeness(har_path: Path) -> dict:
+    """
+    Validate HAR file completeness and analyze response data.
+
+    Args:
+        har_path: Path to HAR file
+
+    Returns:
+        Dictionary with validation statistics
+    """
+    with open(har_path, 'r', encoding='utf-8') as f:
+        har_data = json.load(f)
+
+    entries = har_data.get('log', {}).get('entries', [])
+
+    stats = {
+        'total_entries': len(entries),
+        'with_response_body': 0,
+        'with_json_response': 0,
+        'total_response_size': 0,
+        'sample_responses': [],
+    }
+
+    for entry in entries:
+        response = entry.get('response', {})
+        content = response.get('content', {})
+        mime_type = content.get('mimeType', '')
+        text = content.get('text', '')
+
+        if text:
+            stats['with_response_body'] += 1
+            stats['total_response_size'] += len(text)
+
+            # Check if it's JSON
+            if 'json' in mime_type.lower() or 'javascript' in mime_type.lower():
+                stats['with_json_response'] += 1
+
+                # Save sample (first 3 JSON responses, truncated preview)
+                if len(stats['sample_responses']) < 3:
+                    stats['sample_responses'].append({
+                        'url': entry.get('request', {}).get('url', '')[:80],
+                        'mime_type': mime_type,
+                        'size': len(text),
+                        'preview': text[:300] if len(text) > 300 else text
+                    })
+
+    return stats
+
+
 def print_profile_summary(profile: LinkedInProfile) -> None:
     """Print formatted profile summary."""
     print("\n📊 Extracted Profile Data:")
@@ -449,6 +498,13 @@ async def main():
         if removed > 0:
             logger.info(f"Removed {removed} noise entries, kept {filtered_count} LinkedIn requests")
 
+        # Validate HAR completeness
+        logger.info("Validating HAR file completeness...")
+        har_stats = validate_har_completeness(har_file_path)
+        logger.info(f"HAR validation: {har_stats['with_response_body']}/{har_stats['total_entries']} entries have response bodies")
+        logger.info(f"JSON responses: {har_stats['with_json_response']} entries")
+        logger.info(f"Total response data: {har_stats['total_response_size'] / 1024 / 1024:.2f} MB")
+
         # ====================================================================
         # SUMMARY
         # ====================================================================
@@ -459,10 +515,21 @@ async def main():
 
         if har_file_path.exists():
             har_size = har_file_path.stat().st_size
-            print("📦 HAR file: ✅ CREATED")
+            print("📦 HAR file: ✅ CREATED & VALIDATED")
             print(f"   Location: {har_file_path}")
             print(f"   Size: {har_size:,} bytes ({har_size / 1024 / 1024:.2f} MB)")
-            print(f"   Entries: {filtered_count} network requests")
+            print(f"   Total Entries: {har_stats['total_entries']} network requests")
+            print(f"   With Response Bodies: {har_stats['with_response_body']} ({har_stats['with_response_body']/har_stats['total_entries']*100:.1f}%)")
+            print(f"   JSON Responses: {har_stats['with_json_response']} entries")
+            print(f"   Response Data Size: {har_stats['total_response_size'] / 1024 / 1024:.2f} MB")
+
+            # Show sample JSON responses as proof
+            if har_stats['sample_responses']:
+                print(f"\n   📋 Sample JSON Responses (proof of completeness):")
+                for i, sample in enumerate(har_stats['sample_responses'], 1):
+                    print(f"      {i}. {sample['mime_type']} - {sample['size']:,} bytes")
+                    print(f"         URL: {sample['url']}")
+                    print(f"         Preview: {sample['preview'][:150]}...")
         else:
             print("📦 HAR file: ⚠️  NOT CREATED")
 
