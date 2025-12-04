@@ -1,0 +1,18 @@
+{
+  "website_name": "twitter",
+  "description": "Scrape Twitter/X timeline and profile",
+  "needs_login": true,
+  "login_url": "https://twitter.com/i/flow/login",
+  "credentials": {
+    "email_env_var": "TWITTER_EMAIL",
+    "password_env_var": "TWITTER_PASSWORD"
+  },
+  "allowed_domains": [
+    "*.twitter.com",
+    "*.x.com",
+    "twitter.com",
+    "x.com"
+  ],
+  "task": "Login to Twitter and browse timeline:\n1. Use navigate action to go to https://twitter.com/i/flow/login\n2. Wait 3 seconds for login page to load\n3. Fill in the username or email field with {email} from sensitive_data\n4. Click Next button\n5. Wait 2 seconds\n6. Fill in the password field with {password} from sensitive_data\n7. Click Log in button\n8. Wait 5 seconds for the home timeline to load\n9. Scroll down to load more tweets\n10. Wait 2 seconds\n11. Click on your profile icon in the left sidebar\n12. Wait 3 seconds for profile page to load\n13. Scroll down to see more tweets and profile sections\n14. Wait 2 seconds\n15. Use done action to complete",
+  "storage_state_file": "twitter_auth_state.json"
+}

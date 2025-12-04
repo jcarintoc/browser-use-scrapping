@@ -1,0 +1,16 @@
+{
+  "website_name": "linkedin",
+  "description": "Scrape LinkedIn profile",
+  "needs_login": true,
+  "login_url": "https://www.linkedin.com/login",
+  "credentials": {
+    "email_env_var": "LINKEDIN_EMAIL",
+    "password_env_var": "LINKEDIN_PASSWORD"
+  },
+  "allowed_domains": [
+    "*.linkedin.com",
+    "www.linkedin.com"
+  ],
+  "task": "Login to LinkedIn and navigate to profile:\n1. Use navigate action to go to https://www.linkedin.com/login\n2. Fill email field with {email} from sensitive_data\n3. Fill password field with {password} from sensitive_data\n4. Click Sign in button\n5. Wait 5 seconds for page to load\n6. Click the Me button in top navigation\n7. Click View Profile in dropdown menu\n8. Wait 3 seconds for profile to load\n9. Scroll down to load all sections\n10. Use done action when complete",
+  "storage_state_file": "linkedin_auth_state.json"
+}

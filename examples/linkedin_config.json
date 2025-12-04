@@ -1,0 +1,16 @@
+{
+  "website_name": "linkedin",
+  "description": "Scrape LinkedIn profile with experience and certifications",
+  "needs_login": true,
+  "login_url": "https://www.linkedin.com/login",
+  "credentials": {
+    "email_env_var": "LINKEDIN_EMAIL",
+    "password_env_var": "LINKEDIN_PASSWORD"
+  },
+  "allowed_domains": [
+    "*.linkedin.com",
+    "www.linkedin.com"
+  ],
+  "task": "Login to LinkedIn and navigate to profile:\n1. Use navigate action to go to https://www.linkedin.com/login\n2. Fill email field with {email} from sensitive_data\n3. Fill password field with {password} from sensitive_data\n4. Click Sign in button\n5. Wait 5 seconds for the page to load\n6. If you see a verification prompt, wait for manual verification\n7. After successful login, you should be on the feed page\n8. Wait 3 seconds for feed to fully load\n9. Look for the Me button in the top navigation bar\n10. Click the Me button to open the profile dropdown menu\n11. In the dropdown menu, click the View Profile link\n12. Wait 3 seconds for profile page to load\n13. Scroll down slowly to load the Experience section\n14. Wait 2 seconds\n15. Continue scrolling down to find the Licenses & Certifications section\n16. Wait 2 seconds\n17. Use done action to complete",
+  "storage_state_file": "linkedin_auth_state.json"
+}

@@ -12,7 +12,8 @@ wheels/
 
 # Browser profile data (contains cookies/session)
 browser_data/
-linkedin_auth_state.json
+# all of the auth_state.json files
+*_auth_state.json
 
 # Output data
 output/

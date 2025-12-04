@@ -1,0 +1,6 @@
+{
+  "website_name": "hackernews",
+  "description": "Scrape Hacker News front page and comments",
+  "needs_login": false,
+  "task": "Browse Hacker News front page:\n1. Use navigate action to go to https://news.ycombinator.com\n2. Wait 2 seconds for page to load\n3. Scroll down to load more posts\n4. Wait 1 second\n5. Click on the first post to read comments\n6. Wait 2 seconds for comments to load\n7. Scroll down to see more comments\n8. Wait 1 second\n9. Use done action to complete"
+}

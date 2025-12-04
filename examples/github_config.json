@@ -1,0 +1,16 @@
+{
+  "website_name": "github",
+  "description": "Scrape GitHub repositories and profile",
+  "needs_login": true,
+  "login_url": "https://github.com/login",
+  "credentials": {
+    "email_env_var": "GITHUB_EMAIL",
+    "password_env_var": "GITHUB_PASSWORD"
+  },
+  "allowed_domains": [
+    "*.github.com",
+    "github.com"
+  ],
+  "task": "Login to GitHub and explore profile:\n1. Use navigate action to go to https://github.com/login\n2. Wait 2 seconds for login page to load\n3. Fill in the username or email field with {email} from sensitive_data\n4. Fill in the password field with {password} from sensitive_data\n5. Click Sign in button\n6. Wait 5 seconds for the page to load (may need 2FA verification)\n7. If you see 2FA prompt, wait for manual verification\n8. After successful login, click on your profile icon in the top right\n9. Click Your profile in the dropdown menu\n10. Wait 3 seconds for profile page to load\n11. Scroll down to see pinned repositories\n12. Wait 2 seconds\n13. Click on the Repositories tab\n14. Wait 2 seconds to load repositories list\n15. Scroll down to see more repositories\n16. Wait 2 seconds\n17. Use done action to complete",
+  "storage_state_file": "github_auth_state.json"
+}
