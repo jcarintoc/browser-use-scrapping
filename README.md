@@ -43,12 +43,16 @@ TWITTER_PASSWORD=your_twitter_password
 
 ### Quick Start
 
-**Run the scraper:**
+**Run the scraper for the first time:**
 ```bash
 python main.py
 ```
 
-On first run, it creates `examples/scraper_config.json` with a LinkedIn example.
+This creates two template configs in `examples/templates/`:
+- `with_login_template.json` - LinkedIn example (with authentication)
+- `without_login_template.json` - Hacker News example (no authentication)
+
+Copy a template to `examples/` and edit for your website.
 
 ### Using Pre-Made Configurations
 
@@ -74,17 +78,26 @@ python main.py --config examples/hackernews_config.json
 
 ### Creating Custom Configurations
 
-**Option 1: Edit the auto-generated config**
+**Step 1: Generate templates (first time only)**
+```bash
+python main.py
+```
 
-1. Run `python main.py` to create `examples/scraper_config.json`
-2. Edit the file for your target website
-3. Run again: `python main.py`
+This creates `examples/templates/with_login_template.json` and `without_login_template.json`.
 
-**Option 2: Copy the template**
+**Step 2: Copy and customize**
 
-1. Copy `examples/template_config.json` to a new file
-2. Edit for your website
-3. Run: `python main.py --config examples/your_config.json`
+```bash
+# Copy the appropriate template
+cp examples/templates/with_login_template.json examples/my_website.json
+
+# Or for sites without login
+cp examples/templates/without_login_template.json examples/my_website.json
+
+# Edit the config
+# Then run your custom scraper
+python main.py --config examples/my_website.json
+```
 
 ### Configuration Examples
 
@@ -173,12 +186,14 @@ Uses Grok LLM to intelligently navigate websites based on your task description.
 ```
 browser-use-scrapping/
 ├── main.py                    # Universal web scraper
-├── examples/                  # Configuration files
-│   ├── linkedin_config.json
+├── examples/
+│   ├── templates/             # Template configurations (auto-generated)
+│   │   ├── with_login_template.json
+│   │   └── without_login_template.json
+│   ├── linkedin_config.json   # Pre-made configs
 │   ├── twitter_config.json
 │   ├── github_config.json
-│   ├── hackernews_config.json
-│   └── template_config.json
+│   └── hackernews_config.json
 └── output/                    # Scraping results
 ```
 
