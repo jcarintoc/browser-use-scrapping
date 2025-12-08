@@ -260,6 +260,11 @@ async def scrape_website(config: dict):
     logger.info(f"Output directory: {output_dir}")
     logger.info(f"HAR file: {har_file_path}")
 
+    # Check if stealth mode requested
+    use_stealth = config.get('use_stealth', False)
+    if use_stealth:
+        logger.info("🥷 Stealth mode enabled - using anti-detection techniques")
+
     playwright_instance = None
     browser = None
     context = None
@@ -272,9 +277,19 @@ async def scrape_website(config: dict):
         logger.info("Launching browser with HAR recording...")
         playwright_instance = await async_playwright().start()
 
+        # Use stealth args if enabled
+        chrome_args = ScraperConfig.CHROME_ARGS.copy()
+        if use_stealth:
+            # Add extra stealth arguments
+            chrome_args.extend([
+                '--disable-web-security',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--disable-site-isolation-trials',
+            ])
+
         browser = await playwright_instance.chromium.launch(
             headless=False,
-            args=ScraperConfig.CHROME_ARGS
+            args=chrome_args
         )
 
         context_options = {
@@ -286,6 +301,24 @@ async def scrape_website(config: dict):
                 "height": ScraperConfig.VIEWPORT_HEIGHT
             },
         }
+
+        # Add stealth context options
+        if use_stealth:
+            context_options.update({
+                "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "locale": "en-US",
+                "timezone_id": "America/New_York",
+                "geolocation": {"latitude": 40.7128, "longitude": -74.0060},  # New York
+                "permissions": ["geolocation"],  # Required alongside geolocation setting
+                "color_scheme": "light",
+                "extra_http_headers": {
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1"
+                }
+            })
 
         # Load authentication if available
         if has_saved_auth:
@@ -299,7 +332,51 @@ async def scrape_website(config: dict):
             context_options["storage_state"] = str(temp_storage_file)
 
         context = await browser.new_context(**context_options)
+
         page = await context.new_page()
+
+        # Inject stealth JavaScript if stealth mode enabled
+        if use_stealth:
+            await page.add_init_script("""
+                // Hide webdriver property
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+
+                // Mock plugins
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5]
+                });
+
+                // Mock languages
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['en-US', 'en']
+                });
+
+                // Chrome runtime
+                window.chrome = {
+                    runtime: {}
+                };
+
+                // Permissions - use Object.defineProperty since permissions.query may be read-only
+                // Guard against browsers where permissions API doesn't exist
+                if (window.navigator.permissions && window.navigator.permissions.query) {
+                    const originalQuery = window.navigator.permissions.query.bind(window.navigator.permissions);
+                    Object.defineProperty(window.navigator.permissions, 'query', {
+                        get: () => (parameters) => {
+                            if (parameters.name === 'notifications') {
+                                // Check if Notification API exists before accessing
+                                const notifState = (typeof Notification !== 'undefined')
+                                    ? Notification.permission
+                                    : 'default';
+                                return Promise.resolve({ state: notifState });
+                            }
+                            return originalQuery(parameters);
+                        },
+                        configurable: true
+                    });
+                }
+            """)
 
         # Set up page navigation listener
         async def handle_navigation(frame):

@@ -1,6 +1,15 @@
 # Browser Automation Web Scraper
 
-AI-powered web scraper using `browser-use` and Playwright. Captures complete browser sessions including HTTP requests/responses (HAR files), cookies, and HTML content.
+AI-powered web scraper using `browser-use` and Playwright. Captures complete browser sessions including HTTP requests/responses (HAR files), cookies, and HTML content. Includes tools for API reverse engineering and endpoint testing.
+
+## Features
+
+- **AI-Powered Navigation** - Uses Grok LLM to intelligently navigate websites
+- **Complete Data Capture** - HAR files, cookies, HTML snapshots
+- **Stealth Mode** - Evades basic bot detection with fingerprint masking
+- **API Discovery** - Reverse engineer APIs from captured traffic
+- **Endpoint Testing** - Automatically test discovered endpoints with captured cookies
+- **Authentication Persistence** - Save/load login sessions
 
 ## Installation
 
@@ -21,8 +30,7 @@ source .venv/bin/activate
 **3. Install dependencies:**
 
 ```bash
-uv pip install browser-use playwright aiohttp
-uvx browser-use install
+uv pip install browser-use playwright langchain-openai aiohttp python-dotenv
 playwright install chromium
 ```
 
@@ -35,132 +43,223 @@ XAI_API_KEY=your_xai_api_key_here
 # Add credentials for websites you want to scrape
 LINKEDIN_EMAIL=your_email@example.com
 LINKEDIN_PASSWORD=your_password
-TWITTER_EMAIL=your_twitter_email
-TWITTER_PASSWORD=your_twitter_password
+ABLY_EMAIL=your_ably_email
+ABLY_PASSWORD=your_ably_password
 ```
 
-## Usage
+## Quick Start
 
-### Quick Start
+### Full Pipeline: Scrape → Analyze → Test
 
-**Run the scraper for the first time:**
 ```bash
+# Step 1: Scrape a website
+python main.py --config examples/ably_config.json
+
+# Step 2: Analyze HAR to discover API endpoints
+python analyze_har.py \
+    --output-dir output/ably_20251208_114008 \
+    --config examples/ably_config.json \
+    --methods GET \
+    --data-only
+
+# Step 3: Test discovered endpoints
+python test_endpoints.py --output-dir output/ably_20251208_114008
+```
+
+### First Time Setup
+
+```bash
+# Run without config to generate templates
 python main.py
 ```
 
 This creates two template configs in `examples/templates/`:
-- `with_login_template.json` - LinkedIn example (with authentication)
-- `without_login_template.json` - Hacker News example (no authentication)
+- `with_login_template.json` - For sites requiring authentication
+- `without_login_template.json` - For public sites
 
-Copy a template to `examples/` and edit for your website.
+## Usage
 
-### Using Pre-Made Configurations
-
-The `examples/` folder contains ready-to-use configurations:
+### 1. Web Scraping (`main.py`)
 
 **With Login:**
 ```bash
-# LinkedIn - Profile with experience and certifications
+python main.py --config examples/ably_config.json
 python main.py --config examples/linkedin_config.json
-
-# Twitter/X - Timeline and profile
-python main.py --config examples/twitter_config.json
-
-# GitHub - Profile and repositories
-python main.py --config examples/github_config.json
 ```
 
 **Without Login:**
 ```bash
-# Hacker News - Front page and comments (no credentials needed)
 python main.py --config examples/hackernews_config.json
 ```
 
-### Creating Custom Configurations
-
-**Step 1: Generate templates (first time only)**
-```bash
-python main.py
+**What gets captured:**
+```
+output/{website_name}_{timestamp}/
+├── cookies.json       # All browser cookies
+├── requests.har       # Complete HTTP traffic with response bodies
+├── page_1_*.html      # HTML snapshot of first page
+├── page_2_*.html      # HTML snapshot of second page
+└── page_n_*.html      # HTML for each navigation
 ```
 
-This creates `examples/templates/with_login_template.json` and `without_login_template.json`.
+### 2. API Discovery (`analyze_har.py`)
 
-**Step 2: Copy and customize**
+Reverse engineer APIs from captured HAR files using AI.
 
 ```bash
-# Copy the appropriate template
-cp examples/templates/with_login_template.json examples/my_website.json
-
-# Or for sites without login
-cp examples/templates/without_login_template.json examples/my_website.json
-
-# Edit the config
-# Then run your custom scraper
-python main.py --config examples/my_website.json
+python analyze_har.py \
+    --output-dir output/ably_20251208_114008 \
+    --config examples/ably_config.json
 ```
 
-### Configuration Examples
+**Options:**
+| Flag | Description |
+|------|-------------|
+| `--output-dir` | Path to scraper output directory (required) |
+| `--config` | Path to scraper config file (required) |
+| `--methods` | Filter by HTTP methods, e.g., `GET` or `GET,POST` |
+| `--data-only` | Only include data/API endpoints (skip HTML, static assets) |
+| `--max-tokens-per-chunk` | LLM chunk size (default: 30000) |
 
-**With Login (LinkedIn):**
+**Example with filtering:**
+```bash
+# Only GET requests that return data (JSON, XML, etc.)
+python analyze_har.py \
+    --output-dir output/ably_20251208_114008 \
+    --config examples/ably_config.json \
+    --methods GET \
+    --data-only
+```
+
+**Output:** `api_endpoints.json` with discovered API documentation:
 ```json
 {
-  "website_name": "linkedin",
-  "needs_login": true,
-  "login_url": "https://www.linkedin.com/login",
-  "credentials": {
-    "email_env_var": "LINKEDIN_EMAIL",
-    "password_env_var": "LINKEDIN_PASSWORD"
-  },
-  "task": "Login and navigate to profile:\n1. Use navigate action to go to https://www.linkedin.com/login\n2. Fill email with {email} from sensitive_data\n3. Fill password with {password} from sensitive_data\n4. Click Sign in\n5. Navigate to profile\n6. Use done action",
-  "storage_state_file": "linkedin_auth_state.json"
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/users/{id}/profile",
+      "domain": "api.example.com",
+      "endpoint_name": "Get User Profile",
+      "purpose": "Fetches user profile data",
+      "auth_method": "cookie",
+      "parameters": [...],
+      "response_format": "application/json"
+    }
+  ]
 }
 ```
 
-**Without Login (Hacker News):**
+### 3. Endpoint Testing (`test_endpoints.py`)
+
+Automatically test discovered endpoints using captured cookies.
+
+```bash
+python test_endpoints.py --output-dir output/ably_20251208_114008
+```
+
+**Options:**
+| Flag | Description |
+|------|-------------|
+| `--output-dir` | Path to output directory (required) |
+| `--timeout` | Request timeout in seconds (default: 10) |
+| `--delay` | Delay between requests in seconds (default: 1.0) |
+| `--output-file` | Output filename (default: endpoint_test_results.json) |
+
+**Output:** `endpoint_test_results.json` with test results:
+```json
+{
+  "website_name": "ably",
+  "total_endpoints": 5,
+  "successful_requests": 4,
+  "failed_requests": 1,
+  "results": [
+    {
+      "endpoint_name": "Get App Stats",
+      "method": "GET",
+      "url": "https://ably.com/api/apps/123/stats",
+      "status_code": 200,
+      "status": "success",
+      "response_time_ms": 245.32,
+      "response_json": {...}
+    }
+  ]
+}
+```
+
+## Configuration
+
+### With Login
+```json
+{
+  "website_name": "ably",
+  "needs_login": true,
+  "credentials": {
+    "email_env_var": "ABLY_EMAIL",
+    "password_env_var": "ABLY_PASSWORD"
+  },
+  "storage_state_file": "ably_auth_state.json",
+  "task": "Login and explore:\n1. Navigate to https://ably.com/login\n2. Enter email and password\n3. Click login\n4. Explore dashboard\n5. Use done action"
+}
+```
+
+### Without Login
 ```json
 {
   "website_name": "hackernews",
   "needs_login": false,
-  "task": "Browse Hacker News:\n1. Use navigate action to go to https://news.ycombinator.com\n2. Wait 2 seconds\n3. Scroll down to load more posts\n4. Click on first post\n5. Use done action"
+  "task": "Browse Hacker News:\n1. Navigate to https://news.ycombinator.com\n2. Scroll down\n3. Click first post\n4. Use done action"
 }
 ```
 
-**Minimum Required Fields:**
+### Minimum Required Fields
 - `website_name` - Identifier for output folder
 - `task` - What the agent should do
 
-## What Gets Captured
+## Stealth Mode
+
+The scraper includes stealth features to evade basic bot detection:
+
+- User agent spoofing
+- Timezone and geolocation masking
+- WebDriver property hiding
+- Plugin and language mocking
+- Chrome runtime emulation
+- Permissions API mocking
+
+**Note:** Stealth mode helps with basic detection but may not bypass enterprise-grade protection (Akamai, PerimeterX, Cloudflare Bot Management).
+
+## Project Structure
 
 ```
-output/{website_name}_{timestamp}/
-├── cookies.json              # All browser cookies
-├── requests.har              # Complete HTTP traffic with response bodies
-├── page_1_*.html             # HTML snapshot of first page
-├── page_2_*.html             # HTML snapshot of second page
-└── page_n_*.html             # HTML for each navigation
+browser-use-scrapping/
+├── main.py                    # Universal web scraper
+├── analyze_har.py             # HAR API endpoint analyzer
+├── test_endpoints.py          # Endpoint tester
+├── har_utils/                 # HAR analysis utilities
+│   ├── __init__.py
+│   ├── filters.py             # Tracking/analytics filtering
+│   ├── models.py              # Pydantic models for API endpoints
+│   ├── parser.py              # HAR parsing and chunking
+│   └── analyzer.py            # LLM-powered API discovery
+├── examples/
+│   ├── templates/             # Template configurations (auto-generated)
+│   │   ├── with_login_template.json
+│   │   └── without_login_template.json
+│   ├── ably_config.json       # Ably (with login)
+│   ├── linkedin_config.json   # LinkedIn (with login)
+│   ├── twitter_config.json    # Twitter/X (with login)
+│   ├── github_config.json     # GitHub (with login)
+│   └── hackernews_config.json # Hacker News (no login)
+└── output/                    # Scraping results
+    └── {website}_{timestamp}/
+        ├── cookies.json
+        ├── requests.har
+        ├── page_*.html
+        ├── api_endpoints.json      # From analyze_har.py
+        └── endpoint_test_results.json  # From test_endpoints.py
 ```
 
-### What's in Each File
-
-**cookies.json**
-- All browser cookies from the session
-- Includes authentication tokens, session IDs, preferences
-- Standard JSON format
-
-**requests.har**
-- Complete HTTP request/response log
-- Includes response bodies (JSON, HTML, etc.)
-- Headers, timing, status codes
-- Standard HAR 1.2 format (works with Chrome DevTools, Postman)
-
-**page_*.html**
-- HTML snapshot captured on every navigation
-- Numbered sequentially
-- Includes dynamically loaded content
-
-## Features
-
-### Authentication Persistence
+## Authentication Persistence
 
 First run: Logs in and saves authentication to `{website}_auth_state.json`
 
@@ -168,38 +267,49 @@ Subsequent runs: Loads saved auth (no credentials needed)
 
 **To force re-login:**
 ```bash
-rm linkedin_auth_state.json
+rm ably_auth_state.json
 ```
 
-### AI-Powered Navigation
+## HAR Filtering
 
-Uses Grok LLM to intelligently navigate websites based on your task description.
+The analyzer aggressively filters noise from HAR files:
 
-### Complete Data Capture
+**Filtered out:**
+- Google Analytics, Facebook Pixel, Segment, Mixpanel
+- Sentry, LogRocket, Hotjar, FullStory
+- Intercom, Zendesk, Drift (chat widgets)
+- CDN static assets (JS, CSS, fonts, images)
+- Tracking pixels and beacons
+- Failed requests
 
-- HAR recording captures ALL network traffic
-- HTML snapshots on every page navigation
-- Cookies extracted after session completes
+**Kept:**
+- API endpoints (JSON/XML responses)
+- Data-fetching requests
+- Authentication endpoints
+- Search/query endpoints
 
-## Project Structure
+## Troubleshooting
 
-```
-browser-use-scrapping/
-├── main.py                    # Universal web scraper
-├── examples/
-│   ├── templates/             # Template configurations (auto-generated)
-│   │   ├── with_login_template.json
-│   │   └── without_login_template.json
-│   ├── linkedin_config.json   # Pre-made configs
-│   ├── twitter_config.json
-│   ├── github_config.json
-│   └── hackernews_config.json
-└── output/                    # Scraping results
-```
+### Bot Detection
+If you get blocked:
+1. Some sites have enterprise-grade protection that can't be bypassed
+2. Try adding delays between actions in your task
+3. Use realistic browsing patterns
 
-## Learn More
+### Missing Endpoints
+If the analyzer misses endpoints:
+1. Remove `--data-only` flag to include all requests
+2. Remove `--methods` filter to include POST/PUT/DELETE
+3. Increase `--max-tokens-per-chunk` for larger HAR files
 
-Check `examples/README.md` for:
-- Detailed configuration guide
-- Tips for writing effective tasks
-- Troubleshooting common issues
+### Cookie Issues
+If endpoint tests fail with 401/403:
+1. Cookies may have expired - re-run the scraper
+2. Some endpoints may require additional headers
+3. Check if the site uses short-lived tokens
+
+## Requirements
+
+- Python 3.11+
+- XAI API key (for Grok LLM)
+- Chromium browser (installed via Playwright)
