@@ -1,0 +1,10 @@
+{
+  "website_name": "ably",
+  "needs_login": true,
+  "credentials": {
+    "email_env_var": "ABLY_EMAIL",
+    "password_env_var": "ABLY_PASSWORD"
+  },
+  "storage_state_file": "ably_auth_state.json",
+  "task": "Explore Ably dashboard to discover API endpoints:\n1. Use navigate action to go to https://ably.com/accounts\n2. Wait 3 seconds for dashboard to load\n3. Click on the first available app/project in the list\n4. Wait 3 seconds for app details to load\n5. Look for and click on 'API Keys' or 'Keys' tab/link\n6. Wait 2 seconds\n7. Look for and click on 'Queues' tab/link if available\n8. Wait 2 seconds\n9. Look for and click on 'Integrations' or 'Rules' tab/link if available\n10. Wait 2 seconds\n11. Look for and click on 'Stats' or 'Analytics' or 'Usage' tab/link\n12. Wait 2 seconds\n13. Scroll down to see more content\n14. Look for and click on 'Settings' tab/link if available\n15. Wait 2 seconds\n16. Use done action"
+}

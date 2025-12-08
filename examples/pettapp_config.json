@@ -1,0 +1,16 @@
+{
+  "website_name": "pettapp-seven",
+  "description": "Scrape PetTapp Dashboard",
+  "needs_login": true,
+  "login_url": "https://pettapp-seven.vercel.app/login/pet-owner",
+  "credentials": {
+    "email_env_var": "PETTAPP_EMAIL",
+    "password_env_var": "PETTAPP_PASSWORD"
+  },
+  "allowed_domains": [
+    "*.pettapp-seven.vercel.app",
+    "pettapp-seven.vercel.app"
+  ],
+  "task": "Login to PetTapp and navigate to dashboard:\n1. Use navigate action to go to https://pettapp-seven.vercel.app/login/pet-owner\n2. Fill email field with {email} from sensitive_data\n3. Fill password field with {password} from sensitive_data\n4. Click Sign in button\n5. Wait 5 seconds for page to load\n6. Use done action when complete",
+  "storage_state_file": "pettapp_auth_state.json"
+}

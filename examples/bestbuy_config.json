@@ -1,0 +1,5 @@
+{
+  "website_name": "bestbuy",
+  "needs_login": false,
+  "task": "Browse Best Buy products:\n1. Use navigate action to go to https://www.bestbuy.com\n2. Wait 3 seconds\n3. Scroll down to see featured products\n4. Wait 2 seconds\n5. Click on 'Laptops & Computers' category\n6. Wait 3 seconds\n7. Scroll down to see product listings\n8. Wait 2 seconds\n9. Click on the first laptop product\n10. Wait 3 seconds for product page to load\n11. Scroll down to see details\n12. Wait 2 seconds\n13. Use done action"
+}
