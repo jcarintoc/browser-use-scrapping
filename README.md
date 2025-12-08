@@ -1,6 +1,6 @@
 # Browser Automation Web Scraper
 
-AI-powered web scraper using `browser-use` and Playwright. Captures complete browser sessions including HTTP requests/responses (HAR files), cookies, and HTML content. Includes tools for API reverse engineering and endpoint testing.
+AI-powered web scraper using `browser-use` and Playwright. Captures complete browser sessions including HTTP requests/responses (HAR files), cookies, and HTML content. Includes tools for API reverse engineering, endpoint testing, and Markdown report generation.
 
 ## Features
 
@@ -9,6 +9,7 @@ AI-powered web scraper using `browser-use` and Playwright. Captures complete bro
 - **Stealth Mode** - Evades basic bot detection with fingerprint masking
 - **API Discovery** - Reverse engineer APIs from captured traffic
 - **Endpoint Testing** - Automatically test discovered endpoints with captured cookies
+- **Markdown Reports** - Generate human-readable API documentation
 - **Authentication Persistence** - Save/load login sessions
 
 ## Installation
@@ -49,7 +50,7 @@ ABLY_PASSWORD=your_ably_password
 
 ## Quick Start
 
-### Full Pipeline: Scrape → Analyze → Test
+### Full Pipeline: Scrape → Analyze → Test → Report
 
 ```bash
 # Step 1: Scrape a website
@@ -64,6 +65,9 @@ python analyze_har.py \
 
 # Step 3: Test discovered endpoints
 python test_endpoints.py --output-dir output/ably_20251208_114008
+
+# Step 4: Generate Markdown report
+python generate_report.py --output-dir output/ably_20251208_114008
 ```
 
 ### First Time Setup
@@ -186,6 +190,55 @@ python test_endpoints.py --output-dir output/ably_20251208_114008
 }
 ```
 
+### 4. Markdown Report (`generate_report.py`)
+
+Generate a human-readable Markdown report showing endpoints and their responses.
+
+```bash
+python generate_report.py --output-dir output/ably_20251208_114008
+```
+
+**Options:**
+| Flag | Description |
+|------|-------------|
+| `--output-dir` | Path to output directory (required) |
+| `--output-file` | Output filename (default: api_report.md) |
+
+**Output:** `api_report.md` with:
+- Task that was performed
+- Summary statistics (total endpoints, success/failure counts)
+- Endpoints overview table grouped by domain
+- Detailed endpoint documentation with actual responses
+- Usage examples (curl commands)
+
+**Example report structure:**
+```markdown
+# API Endpoints Report: ably
+
+## Task Performed
+...
+
+## Summary
+| Metric | Value |
+|--------|-------|
+| Total Endpoints | 5 |
+| Successful Requests | 4 |
+
+## Endpoints Overview
+### ably.com
+| Method | Endpoint | Status | Response Time |
+|--------|----------|--------|---------------|
+| `GET` | `/api/apps/{id}/stats` | 200 | 245ms |
+
+## Endpoint Details
+### 1. Get App Stats
+**URL:** `https://ably.com/api/apps/123/stats`
+**Response:**
+```json
+{"data": "..."}
+```
+```
+
 ## Configuration
 
 ### With Login
@@ -235,6 +288,7 @@ browser-use-scrapping/
 ├── main.py                    # Universal web scraper
 ├── analyze_har.py             # HAR API endpoint analyzer
 ├── test_endpoints.py          # Endpoint tester
+├── generate_report.py         # Markdown report generator
 ├── har_utils/                 # HAR analysis utilities
 │   ├── __init__.py
 │   ├── filters.py             # Tracking/analytics filtering
@@ -255,8 +309,9 @@ browser-use-scrapping/
         ├── cookies.json
         ├── requests.har
         ├── page_*.html
-        ├── api_endpoints.json      # From analyze_har.py
-        └── endpoint_test_results.json  # From test_endpoints.py
+        ├── api_endpoints.json          # From analyze_har.py
+        ├── endpoint_test_results.json  # From test_endpoints.py
+        └── api_report.md               # From generate_report.py
 ```
 
 ## Authentication Persistence
